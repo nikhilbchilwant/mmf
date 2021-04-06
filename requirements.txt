@@ -10,7 +10,7 @@ fasttext==0.9.1
 nltk==3.4.5
 editdistance==0.5.3
 transformers==3.4.0
-sklearn==0.0
+scikit-learn==0.21.3
 omegaconf==2.0.6
 lmdb==0.98
 termcolor==1.1.0
