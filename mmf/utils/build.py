@@ -208,6 +208,8 @@ def build_multiple_datamodules(
             dataset_config = OmegaConf.create()
         datamodule_instance.prepare_data(dataset_config)
         datamodule_instance.setup()
+        if hasattr(datamodule_instance, "update_registry_for_model"):
+            datamodule_instance.update_registry_for_model(dataset_config)
         datamodules[dataset] = datamodule_instance
     return datamodules
 
@@ -422,6 +424,7 @@ def build_classifier_layer(config, *args, **kwargs):
 
 
 def build_text_encoder(config, *args, **kwargs):
+    """Deprecated, please do not use"""
     try:
         from mmf.modules.fb.encoders import TextEncoderFactory
     except ImportError:
@@ -432,6 +435,7 @@ def build_text_encoder(config, *args, **kwargs):
 
 
 def build_image_encoder(config, direct_features=False, **kwargs):
+    """Deprecated, please do not use"""
     from mmf.modules.encoders import ImageEncoderFactory, ImageFeatureEncoderFactory
 
     if direct_features:

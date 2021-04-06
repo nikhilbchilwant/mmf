@@ -160,8 +160,10 @@ def setup_imports():
     datasets_pattern = os.path.join(datasets_folder, "**", "*.py")
     model_folder = os.path.join(root_folder, "models")
     common_folder = os.path.join(root_folder, "common")
+    modules_folder = os.path.join(root_folder, "modules")
     model_pattern = os.path.join(model_folder, "**", "*.py")
     common_pattern = os.path.join(common_folder, "**", "*.py")
+    modules_pattern = os.path.join(modules_folder, "**", "*.py")
 
     importlib.import_module("mmf.common.meter")
 
@@ -170,6 +172,7 @@ def setup_imports():
         + glob.glob(model_pattern, recursive=True)
         + glob.glob(trainer_pattern, recursive=True)
         + glob.glob(common_pattern, recursive=True)
+        + glob.glob(modules_pattern, recursive=True)
     )
 
     for f in files:
@@ -186,3 +189,11 @@ def setup_imports():
             importlib.import_module(module)
 
     registry.register("imports_setup", True)
+
+
+def teardown_imports():
+    from mmf.common.registry import registry
+
+    registry.unregister("pythia_path")
+    registry.unregister("mmf_path")
+    registry.unregister("imports_setup")
