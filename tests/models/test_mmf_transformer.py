@@ -210,7 +210,8 @@ class TestMMFTransformer(unittest.TestCase):
         sample_list.image = torch.rand(2, 256)
         sample_list.text = torch.randint(0, 512, (2, 128))
 
-        transformer_input = mmft.preprocess_sample(sample_list)
+        with torch.no_grad():
+            transformer_input = mmft.preprocess_sample(sample_list)
         input_ids = transformer_input["input_ids"]
         self.assertEqual(input_ids["image"].dim(), 3)
         self.assertEqual(list(input_ids["image"].size()), [2, 1, 256])
@@ -265,7 +266,8 @@ class TestMMFTransformer(unittest.TestCase):
         sample_list.lm_label_ids = torch.randint(-1, 30522, (2, 2, 128))
         lm_labels_sum = sample_list.lm_label_ids.sum().item()
 
-        transformer_input = mmft.preprocess_sample(sample_list)
+        with torch.no_grad():
+            transformer_input = mmft.preprocess_sample(sample_list)
         self._compare_processed_for_multimodality(transformer_input, lm_labels_sum)
 
     def test_modality_key_preprocessing(self):
@@ -294,7 +296,8 @@ class TestMMFTransformer(unittest.TestCase):
         sample_list.lm_label_ids = torch.randint(-1, 30522, (2, 128))
         lm_labels_sum = sample_list.lm_label_ids.sum().item() * 2
 
-        transformer_input = mmft.preprocess_sample(sample_list)
+        with torch.no_grad():
+            transformer_input = mmft.preprocess_sample(sample_list)
         self._compare_processed_for_multimodality(transformer_input, lm_labels_sum)
 
     def _compare_processed_for_multimodality(self, transformer_input, lm_labels_sum=0):
@@ -366,7 +369,8 @@ class TestMMFTransformer(unittest.TestCase):
         sample_list.my_random_feature_mask = torch.ones(2, 4)
         sample_list.my_random_feature_mask[:, 3:] = 0
 
-        transformer_input = mmft.preprocess_sample(sample_list)
+        with torch.no_grad():
+            transformer_input = mmft.preprocess_sample(sample_list)
         input_ids = transformer_input["input_ids"]
         self.assertEqual(input_ids["image"].dim(), 3)
         self.assertEqual(list(input_ids["image"].size()), [2, 1, 256])
@@ -420,7 +424,8 @@ class TestMMFTransformer(unittest.TestCase):
         sample_list.image = torch.rand(2, 3, 224, 224)
         sample_list.text = torch.randint(0, 512, (2, 128))
 
-        transformer_input = mmft.preprocess_sample(sample_list)
+        with torch.no_grad():
+            transformer_input = mmft.preprocess_sample(sample_list)
 
         input_ids = transformer_input["input_ids"]
         self.assertEqual(input_ids["image"].dim(), 3)
