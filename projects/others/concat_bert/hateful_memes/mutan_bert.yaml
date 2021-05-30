@@ -33,8 +33,6 @@ training:
   lr_scheduler: true
   max_updates: 22000
   early_stop:
-    enabled: true
-    patience: 1000
     criteria: hateful_memes/roc_auc
     minimize: false
 
