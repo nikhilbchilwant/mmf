@@ -1,12 +1,12 @@
 # Copyright (c) Facebook, Inc. and its affiliates.
 
 import unittest
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 import torch
 from mmf.utils.general import clip_gradients
 from pytorch_lightning.callbacks.base import Callback
-from tests.trainers.lightning.test_utils import get_lightning_trainer, get_mmf_trainer
+from tests.trainers.test_utils import get_lightning_trainer, get_mmf_trainer
 
 
 class TestLightningTrainerGradClipping(unittest.TestCase, Callback):
@@ -47,13 +47,14 @@ class TestLightningTrainerGradClipping(unittest.TestCase, Callback):
         mmf_trainer._finish_update = _finish_update
         mmf_trainer.training_loop()
 
-        trainer = get_lightning_trainer(
-            max_steps=5,
-            max_epochs=None,
-            gradient_clip_val=self.grad_clip_magnitude,
-            callback=self,
-        )
-        trainer.trainer.fit(trainer.model, trainer.data_module.train_loader)
+        with patch("mmf.trainers.lightning_trainer.get_mmf_env", return_value=None):
+            trainer = get_lightning_trainer(
+                max_steps=5,
+                max_epochs=None,
+                gradient_clip_val=self.grad_clip_magnitude,
+                callback=self,
+            )
+            trainer.trainer.fit(trainer.model, trainer.data_module.train_loader)
 
     def on_after_backward(self, trainer, pl_module):
         for param in pl_module.parameters():

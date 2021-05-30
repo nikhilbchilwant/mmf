@@ -1,11 +1,8 @@
 # Copyright (c) Facebook, Inc. and its affiliates.
 
-
-from unittest.mock import MagicMock
-
-import torch
+from mmf.common.registry import registry
 from mmf.trainers.lightning_trainer import LightningTrainer
-from tests.test_utils import NumbersDataset
+from tests.trainers.test_trainer_mocks import MultiDataModuleNumbersTestObject
 
 
 class LightningTrainerMock(LightningTrainer):
@@ -21,6 +18,7 @@ class LightningTrainerMock(LightningTrainer):
         lr_scheduler=False,
         gradient_clip_val=0.0,
         precision=32,
+        **kwargs
     ):
         self.config = config
         self._callbacks = None
@@ -28,16 +26,9 @@ class LightningTrainerMock(LightningTrainer):
             self._callbacks = [callback]
 
         # data
-        self.data_module = MagicMock()
-        dataset = NumbersDataset(num_data_size)
-        self.data_module.train_loader = torch.utils.data.DataLoader(
-            dataset=dataset,
-            batch_size=batch_size,
-            shuffle=False,
-            num_workers=1,
-            drop_last=False,
+        self.data_module = MultiDataModuleNumbersTestObject(
+            num_data=num_data_size, batch_size=batch_size
         )
-        self.data_module.train_loader.current_dataset = MagicMock(spec=dataset)
 
         # settings
         trainer_config = self.config.trainer.params
@@ -48,5 +39,19 @@ class LightningTrainerMock(LightningTrainer):
         trainer_config.gradient_clip_val = gradient_clip_val
         trainer_config.precision = precision
 
+        for key, value in kwargs.items():
+            trainer_config[key] = value
+
         self.trainer_config = trainer_config
+        self.training_config = self.config.training
+        self.training_config.batch_size = batch_size
+        self.run_type = self.config.get("run_type", "train")
         self.config.training.lr_scheduler = lr_scheduler
+        registry.register("config", self.config)
+
+        self.data_module = MultiDataModuleNumbersTestObject(
+            num_data=num_data_size, batch_size=batch_size
+        )
+        self.train_loader = self.data_module.train_dataloader()
+        self.val_loader = self.data_module.val_dataloader()
+        self.test_loader = self.data_module.test_dataloader()

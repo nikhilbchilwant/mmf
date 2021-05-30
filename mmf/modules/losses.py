@@ -34,6 +34,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from mmf.common.registry import registry
+from mmf.utils.logger import log_class_usage
 from omegaconf import MISSING
 from torch import Tensor
 from torch.nn.utils.rnn import pack_padded_sequence
@@ -168,10 +169,12 @@ class MMFLoss(nn.Module):
 
         loss_class = registry.get_loss_class(loss_name)
 
+        log_class_usage("Loss", loss_class)
+
         if loss_class is None:
             raise ValueError(f"No loss named {loss_name} is registered to registry")
         # Special case of multi as it requires an array
-        if loss_name == "multi":
+        if loss_name.startswith("multi"):
             assert is_mapping
             self.loss_criterion = loss_class(params)
         else:
@@ -419,7 +422,7 @@ class MultiLoss(nn.Module):
         loss = 0
         for idx, loss_fn in enumerate(self.losses):
             value = loss_fn(sample_list, model_output, *args, **kwargs)
-            loss += self.losses_weights[idx] * value
+            loss += self.losses_weights[idx] * list(value.values())[0]
         return loss
 
 
@@ -571,10 +574,8 @@ class M4CDecodingBCEWithMaskLoss(nn.Module):
 
 @registry.register_loss("cross_entropy")
 class CrossEntropyLoss(nn.Module):
-    def __init__(self, params=None):
+    def __init__(self, **params):
         super().__init__()
-        if params is None:
-            params = {}
         self.loss_fn = nn.CrossEntropyLoss(**params)
 
     def forward(self, sample_list, model_output):
@@ -606,8 +607,8 @@ class SoftLabelCrossEntropyLoss(nn.Module):
 
     def compute_loss(self, targets, scores):
         """for N examples and C classes
-        - output: N x C these are raw outputs (without softmax/sigmoid)
-        - target: N x C or N corresponding targets
+        - scores: N x C these are raw outputs (without softmax/sigmoid)
+        - targets: N x C or N corresponding targets
 
         Target elements set to ignore_index contribute 0 loss.
 
@@ -621,11 +622,13 @@ class SoftLabelCrossEntropyLoss(nn.Module):
 
         if targets.dim() == 1:
             targets = targets.unsqueeze(1)
-        mask = targets != self.ignore_index
+            mask = targets.ne(self.ignore_index).float()  # mask out `ignore_index`
+        else:
+            mask = targets.sum(-1, keepdim=True).ne(0).float()  # mask out zero rows
 
         if targets.size(1) == 1:
             targets = self.convert_to_one_hot(targets, scores.size(1))
-        targets = targets.float() * mask.float()
+        targets = targets.float() * mask
 
         if self.normalize_targets:
             targets /= self.eps + targets.sum(dim=1, keepdim=True)
@@ -664,13 +667,14 @@ class LabelSmoothingCrossEntropyLoss(SoftLabelCrossEntropyLoss):
     def smooth_targets(self, targets, n_classes):
         if targets.dim() == 1:
             targets = targets.unsqueeze(1)
-        mask = targets != self.ignore_index
+        mask = targets.ne(self.ignore_index)
 
         smoothing_value = self.label_smoothing / (n_classes - 1)
         one_hot = torch.full(
             (n_classes,), smoothing_value, device=targets.device
         ).repeat(targets.size(0), 1)
-        one_hot.scatter_(1, targets, 1 - self.label_smoothing)
+        # mask out target with `ignore_index` to avoid error `index out of bounds`
+        one_hot.scatter_(1, targets * mask.long(), 1 - self.label_smoothing)
         return one_hot * mask.float()
 
     def forward(self, sample_list, model_output):
