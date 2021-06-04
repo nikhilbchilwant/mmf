@@ -128,13 +128,12 @@ def gather_tensor(tensor):
     with torch.no_grad():
         tensor_list = []
 
-        for _ in range(world_size):
-            tensor_list.append(torch.zeros_like(tensor))
-
         if is_xla():
             tensor_list = xm.all_gather(tensor)
             tensor_list = tensor_list.view(world_size, *tensor.size())
         else:
+            for _ in range(world_size):
+                tensor_list.append(torch.zeros_like(tensor))
             dist.all_gather(tensor_list, tensor)
             tensor_list = torch.stack(tensor_list, dim=0)
     return tensor_list
