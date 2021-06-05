@@ -771,6 +771,7 @@ class ContrastiveLoss(nn.Module):
 class MSELoss(nn.Module):
     """Mean Squared Error loss
     """
+
     def __init__(self):
         super().__init__()
         self.loss_fn = nn.MSELoss()
@@ -786,6 +787,7 @@ class MSELoss(nn.Module):
 class CosineEmbeddingLoss(nn.Module):
     """Cosine embedding loss
     """
+
     def __init__(self):
         super().__init__()
         self.loss_fn = nn.CosineEmbeddingLoss()
