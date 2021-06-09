@@ -3,9 +3,17 @@
 import logging
 import warnings
 from abc import ABC
+from itertools import chain
 
 import torch
 from mmf.common.registry import registry
+from mmf.utils.distributed import is_master, is_xla, get_world_size
+
+
+try:
+    import torch_xla.core.xla_model as xm
+except ImportError:
+    xm = None
 
 
 logger = logging.getLogger(__name__)
@@ -86,3 +94,19 @@ class TrainerDeviceMixin(ABC):
                     output_device=self.local_rank,
                     find_unused_parameters=self.config.training.find_unused_parameters,
                 )
+
+        if is_xla() and get_world_size() > 1:
+            broadcast_xla_master_model_param(self.model)
+
+
+def broadcast_xla_master_model_param(model):
+    logger.info("Broadcasting XLA model parameters and buffers from master process ...")
+
+    parameters_and_buffers = []
+    for p in chain(model.parameters(), model.buffers()):
+        if not is_master():
+            p.data[...] = 0
+        parameters_and_buffers.append(p.data)
+    xm.all_reduce(xm.REDUCE_SUM, parameters_and_buffers)
+    xm.rendezvous("mmf.trainers.core.device.broadcast_xla_master_model_param")
+    logger.info("Done!")

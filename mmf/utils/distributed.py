@@ -86,11 +86,11 @@ def broadcast_tensor(tensor, src=0):
     with torch.no_grad():
         if is_xla():
             tensor = xm.all_to_all(
-                tensor.repeat([world_size, 1]),
+                tensor.repeat([world_size] + [1] * tensor.dim()),
                 split_dimension=0,
                 concat_dimension=0,
                 split_count=world_size,
-            )[0]
+            )[src]
         else:
             dist.broadcast(tensor, src=0)
 
