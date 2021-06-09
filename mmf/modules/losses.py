@@ -36,6 +36,7 @@ import torch.nn.functional as F
 from mmf.common.registry import registry
 from mmf.utils.logger import log_class_usage
 from omegaconf import MISSING
+from packaging import version
 from torch import Tensor
 from torch.nn.utils.rnn import pack_padded_sequence
 
@@ -319,7 +320,7 @@ class CaptionCrossEntropyLoss(nn.Module):
             decode_lengths = (caption_lengths - 1).tolist()
         else:
             decode_lengths = [targets.size(1)] * targets.size(0)
-        if torch.__version__ >= "1.1":
+        if version.parse(torch.__version__) >= version.parse("1.1"):
             scores = pack_padded_sequence(scores, decode_lengths, batch_first=True).data
             targets = pack_padded_sequence(
                 targets, decode_lengths, batch_first=True
@@ -764,3 +765,34 @@ class ContrastiveLoss(nn.Module):
         loss1 = F.cross_entropy(mma, labels)
         loss2 = F.cross_entropy(mma.T, labels)
         return (loss1 + loss2) / 2
+
+
+@registry.register_loss("mse")
+class MSELoss(nn.Module):
+    """Mean Squared Error loss"""
+
+    def __init__(self):
+        super().__init__()
+        self.loss_fn = nn.MSELoss()
+
+    def forward(self, sample_list, model_output):
+        targets = sample_list["targets"]
+        scores = model_output["scores"]
+        loss = self.loss_fn(scores, targets)
+        return loss
+
+
+@registry.register_loss("cos_emb_loss")
+class CosineEmbeddingLoss(nn.Module):
+    """Cosine embedding loss"""
+
+    def __init__(self):
+        super().__init__()
+        self.loss_fn = nn.CosineEmbeddingLoss()
+
+    def forward(self, sample_list, model_output):
+        targets = sample_list["targets"]
+        scores = model_output["scores"]
+        y = torch.ones(targets.size(0)).to(targets.device)
+        loss = self.loss_fn(scores, targets, y)
+        return loss

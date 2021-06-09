@@ -20,6 +20,7 @@ from mmf.trainers.core.training_loop import TrainerTrainingLoopMixin
 from mmf.utils.build import build_model, build_optimizer
 from mmf.utils.general import print_model_parameters
 from omegaconf import DictConfig, OmegaConf
+from packaging import version
 
 
 logger = logging.getLogger(__name__)
@@ -107,16 +108,16 @@ class MMFTrainer(
 
     def load_fp16_scaler(self):
         if self.training_config.fp16:
-            assert (
-                torch.__version__ >= "1.6"
-            ), "Using fp16 requires torch version >- 1.6"
+            assert version.parse(torch.__version__) >= version.parse(
+                "1.6"
+            ), f"Using fp16 requires torch version >- 1.6, found: {torch.__version__}"
             assert self.device != torch.device("cpu"), "fp16 cannot be used on cpu"
 
         set_torch_grad_scaler = True
         if self.training_config.fp16 and self.distributed:
             try:
-                from fairscale.optim.oss import OSS
                 from fairscale.optim.grad_scaler import ShardedGradScaler
+                from fairscale.optim.oss import OSS
 
                 if isinstance(self.optimizer, OSS):
                     self.scaler = ShardedGradScaler()
