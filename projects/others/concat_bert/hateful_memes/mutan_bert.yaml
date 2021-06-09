@@ -13,13 +13,13 @@ model_config:
 scheduler:
   type: warmup_linear
   params:
-    num_warmup_steps: 2000
+    num_warmup_steps: 500
     num_training_steps: ${training.max_updates}
 
 optimizer:
   type: adam_w
   params:
-    lr: 1e-5
+    lr: 4.51652551e-03
     eps: 1e-8
 
 evaluation:
@@ -31,7 +31,7 @@ evaluation:
 training:
   batch_size: 64
   lr_scheduler: true
-  max_updates: 22000
+  max_updates: 10000
   early_stop:
     criteria: hateful_memes/roc_auc
     minimize: false

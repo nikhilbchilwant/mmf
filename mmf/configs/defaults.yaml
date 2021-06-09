@@ -77,7 +77,7 @@ training:
         # Whether to use early stopping, (Default: false)
         enabled: false
         # Patience for early stoppings
-        patience: 4000
+        patience: 1000
         # Criteria to be monitored for early stopping
         # total_loss will monitor combined loss from all of the tasks
         # Criteria can also be an evaluation metric in this format `dataset/metric`

@@ -91,18 +91,29 @@ export CUDA_VISIBLE_DEVICES=1
 #    training.batch_size_per_device=16 \
 #    training.evaluation_interval=100
 
-#echo "training mutan_BERT"
+echo "training mutan_BERT"
+#lrs = ( 1.06704749e-05 5.70739300e-05 8.26783289e-04 1.79045221e-05 4.51652551e-03 )
+#for lr in "${lrs[@]}":
 export MMF_SAVE_DIR="./mutan_BERT"
 mmf_run config="projects/hateful_memes/configs/concat_bert/mutan_bert.yaml" \
     model=mutan_bert \
     dataset=hateful_memes \
     run_type=train_val \
-    training.max_epochs=10 \
     training.batch_size_per_device=16 \
-#    training.evaluation_interval=1000
+    training.evaluation_interval=1000
+#    training.max_epochs=10 \
+#  echo $lr
+#done
+#mmf_run config="projects/hateful_memes/configs/concat_bert/defaults.yaml" \
+#    model=concat_bert \
+#    dataset=hateful_memes \
+#    run_type=train_val \
+#    training.batch_size_per_device=16 \
 
-#mmf_predict config="projects/hateful_memes/configs/concat_bert/defaults.yaml" \
-#    model=<REPLACE_WITH_MODEL_KEY> dataset=hateful_memes \
-#    run_type=test checkpoint.resume_file=<path_to_best_trained_model> checkpoint.resume_pretrained=False
+#mmf_predict config="projects/hateful_memes/configs/concat_bert/mutan_bert.yaml" \
+#    model=mutan_bert \
+#    dataset=hateful_memes \
+#    run_type=test \
+#    checkpoint.resume_file=mutan_BERT/mutan_bert_final.pth checkpoint.resume_pretrained=False
 
 echo "Finished execution."
